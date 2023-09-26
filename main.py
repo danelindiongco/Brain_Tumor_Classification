@@ -56,12 +56,13 @@ def loadData(dir='/Users/danelindiongco/PycharmProjects/BrainTumorClassification
 
 
 class Options():
-    def __init__(self, epoch=100, lr=0.01):
+    def __init__(self, class_list, epoch=100, lr=0.01):
         self.epoch = epoch
         self.learning_rate = lr
 
         self.net = torch.hub.load('pytorch/vision:v0.10.0', 'resnet18')
         self.net.conv1 = nn.Conv2d(1, 64, kernel_size=7, stride=2, padding=3, bias=False)
+        self.net.fc = nn.Linear(512, len(class_list))
 
         self.run_name = 'test'
 
@@ -69,7 +70,7 @@ class Options():
 if __name__ == '__main__':
     train_img_paths, test_img_paths, train_labels, test_labels = loadData()
     class_list = list(set(train_labels))
-    opt = Options()
+    opt = Options(class_list)
 
     train_dataset = ModelDataset(train_img_paths, train_labels, class_list, train=True)
     test_dataset = ModelDataset(test_img_paths, test_labels, class_list)
@@ -77,13 +78,15 @@ if __name__ == '__main__':
     train_dataloader = DataLoader(train_dataset, batch_size=100)
     test_dataloader = DataLoader(test_dataset, batch_size=10)
 
-    train = Run(opt.net, train_dataloader, opt.learning_rate, len(train_dataset), class_list, opt.run_name)
-    test = Run(opt.net, test_dataloader, opt.learning_rate, len(test_dataset), class_list, opt.run_name)
+    train = Run(opt.net, opt.learning_rate, opt.run_name,
+                train_dataloader, test_dataloader,
+                len(train_dataset), len(test_dataset),
+                class_list)
 
-    for epoch in range(10):
+    for epoch in range(100):
         print('Epoch: ' + str(epoch + 1))
         train_loss, train_accuracy = train.train()
-        test_loss, test_accuracy = test.test(save=True)
+        test_loss, test_accuracy, output_img = train.test(save=True)
 
     x = 1
 
