@@ -59,7 +59,11 @@ class Options():
     def __init__(self, epoch=100, lr=0.01):
         self.epoch = epoch
         self.learning_rate = lr
+
         self.net = torch.hub.load('pytorch/vision:v0.10.0', 'resnet18')
+        self.net.conv1 = nn.Conv2d(1, 64, kernel_size=7, stride=2, padding=3, bias=False)
+
+        self.run_name = 'test'
 
 
 if __name__ == '__main__':
@@ -71,15 +75,15 @@ if __name__ == '__main__':
     test_dataset = ModelDataset(test_img_paths, test_labels, class_list)
 
     train_dataloader = DataLoader(train_dataset, batch_size=100)
-    test_dataloader = DataLoader(test_dataset, batch_size=20)
+    test_dataloader = DataLoader(test_dataset, batch_size=10)
 
-    train = Run(opt.net, train_dataloader, opt.learning_rate, len(train_dataset), class_list, 'test')
-    # test = Run()
+    train = Run(opt.net, train_dataloader, opt.learning_rate, len(train_dataset), class_list, opt.run_name)
+    test = Run(opt.net, test_dataloader, opt.learning_rate, len(test_dataset), class_list, opt.run_name)
 
     for epoch in range(10):
         print('Epoch: ' + str(epoch + 1))
         train_loss, train_accuracy = train.train()
-        #test_loss, test_accuracy = test.test(save=True)
+        test_loss, test_accuracy = test.test(save=True)
 
     x = 1
 

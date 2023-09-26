@@ -19,8 +19,11 @@ import torch.optim as optim
 
 
 class Run():
-    def __init__(self, net, loaders, lr, dataset_len, class_list, name):
+    def __init__(self, net, train_loader, test_loader, train_len, test_len, class_list, learning_rate, name):
         self.net = net
+        self.device = self.gpu_dev()
+        self.net.to(self.device)
+
         self.loaders = loaders
         self.dataset_len = dataset_len
         self.loss_func = nn.BCEWithLogitsLoss()
@@ -43,13 +46,14 @@ class Run():
     def train(self):
         print('Training ' + self.name)
         device = self.gpu_dev()
+        self.net.to(device)
 
         self.net.train()
 
         self.total_loss, self.correct_prediction = 0, 0
 
         for i, (images, labels) in enumerate(tqdm.tqdm(self.loaders)):
-            train_imgs, train_labels = images.to(device), labels.to(device)
+            train_imgs, train_labels = images.to(self.device), labels.to(self.device)
 
             train_prediction = self.net(train_imgs)
 
@@ -64,17 +68,20 @@ class Run():
             self.total_loss += train_loss
             self.total_loss /= (i + 1)
 
-            self.real_vec, self.prediction_vec = self.collect_indices(train_labels, train_prediction)
-            self.tally_correct()
+            #self.real_vec, self.prediction_vec = self.collect_indices(train_labels, train_prediction)
+            #self.tally_correct()
 
-        accuracy = torch.round(100 * (self.correct_prediction / (self.dataset_len * 0.8)))
+        #accuracy = torch.round(100 * (self.correct_prediction / (self.dataset_len * 0.8)))
 
-        print(f"Train loss: {float(self.total_loss)}, Train Accuracy: {accuracy}%")
+        #print(f"Train loss: {float(self.total_loss)}, Train Accuracy: {accuracy}%")
 
-        return self.total_loss, accuracy
+        return self.total_loss, #accuracy
 
     def test(self, save=False):
         self.net.eval()
+        print('Testing ' + self.name)
+        device = self.gpu_dev()
+        self.net.to(device)
 
         self.total_loss, self.correct_prediction, self.best_acc = 0, 0, 0
         self.conf_prediction, self.conf_true = [], []
@@ -82,7 +89,7 @@ class Run():
 
         with torch.no_grad():
             for i, (images, labels) in enumerate(tqdm.tqdm(self.loaders)):
-                test_imgs, test_labels = images.device, labels.device
+                test_imgs, test_labels = images.to(device), labels.to(device)
 
                 test_prediction = self.net(test_imgs)
 
@@ -112,3 +119,6 @@ class Run():
         print(f"Test loss: {round(float(self.total_loss), 7)}, Test accuracy: {accuracy}%")
 
         return self.total_loss, accuracy, output_image
+
+
+
